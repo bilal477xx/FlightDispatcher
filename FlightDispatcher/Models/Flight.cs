@@ -1,12 +1,11 @@
 using System;
-using FlightDispatcher.Events;
 using FlightDispatcher.Models.Enums;
 
 namespace FlightDispatcher.Models;
 
 public class Flight
 {
-    
+
     public string FlightId
     {
         get;
@@ -14,15 +13,48 @@ public class Flight
         {
             if (string.IsNullOrWhiteSpace(value))
                 throw new ArgumentException("Flight ID is required.");
+
+            field = value;
+        }
+    } = string.Empty;
+
+    public string Airline
+    {
+        get;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Airline is required.");
             
             field = value;
         }
-    }
-    public string Airline { get; set; }
-    public string Origin { get; set; }
-    public string Destination { get; set; }
-    public DateTime? DepartureTime { get; set; }
-    public DateTime? ArrivalTime { get; set; }
+    } = string.Empty;
+
+    public string Origin
+    {
+        get;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Origin is required.");
+            
+            field = value;
+        }
+    } = string.Empty;
+
+    public string Destination
+    {
+        get;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Destination is required.");
+            
+            field = value;
+        }
+    } = string.Empty;
+    public DateTime? DepartureTime { get; private set; }
+    public DateTime? ArrivalTime { get; private set; }
 
     public double FlightDuration
     {
@@ -35,21 +67,16 @@ public class Flight
             field = value;
         }
     }
-    public FlightStatus Status { get; set; }
+    public FlightStatus Status { get; private set; }
 
     public Flight()
     {
-        FlightId = string.Empty;
-        Airline = string.Empty;
-        Origin = string.Empty;
-        Destination = string.Empty;
-        DepartureTime = DateTime.Now;
-        ArrivalTime = DateTime.Now;
-        FlightDuration = 0.0;
+        DepartureTime = null;
+        ArrivalTime = null;
         Status = FlightStatus.Landed;
     }
 
-    public Flight(string flightId, string airline, string origin, string destination, DateTime departureTime, DateTime arrivalTime)
+    public Flight(string flightId, string airline, string origin, string destination, DateTime departureTime, DateTime arrivalTime, double flightDuration, FlightStatus status)
     {
         FlightId = flightId;
         Airline = airline;
@@ -57,7 +84,8 @@ public class Flight
         Destination = destination;
         DepartureTime = departureTime;
         ArrivalTime = arrivalTime;
-        FlightDuration = 0.0;
+        FlightDuration = flightDuration;
+        Status = status; 
     }
 
     public void MarkAsDeparted(DateTime departureTime)
@@ -80,12 +108,23 @@ public class Flight
         Destination = "Home";
     }
 
+    public bool ValidFlight()
+    {
+        if (string.IsNullOrWhiteSpace(FlightId) || string.IsNullOrWhiteSpace(Airline) || string.IsNullOrWhiteSpace(Origin) ||
+            string.IsNullOrWhiteSpace(Destination) || FlightDuration <= 0.0)
+        {
+            return false;
+        }
+        
+        return true;
+    }
+
     public override string ToString()
     {
         return string.Join(Environment.NewLine,
             $"Flight ID: {FlightId}, Airline: {Airline}",
             $"Origin: {Origin}, Destination: {Destination}",
-            $"Departure Time: {DepartureTime}, Arrival Time: {ArrivalTime},  Flight Duration: {FlightDuration}",
+            //$"Departure Time: {DepartureTime}, Arrival Time: {ArrivalTime},  Flight Duration: {FlightDuration}",
             $"Status: {Status}");
     }
 }

@@ -2,11 +2,28 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:models="clr-namespace:FlightDispatcher.Models"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         Width="800" Height="450"
+        RequestedThemeVariant="Light"
         x:Class="FlightDispatcher.MainWindow"
-        Title="FlightDispatcher">
+        Title="FlightDispatcher" Padding="16">
     <Window.Styles>
+        <Style Selector="DataValidationErrors">
+            <Setter Property="ErrorTemplate">
+                <DataTemplate x:CompileBindings="False">
+                    <ItemsControl ItemsSource="{Binding}" Foreground="Red">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="sys:Exception">
+                                <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DataTemplate>
+            </Setter>
+        </Style>
+        
         <Style Selector="Label">
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -45,47 +62,92 @@
         <Style Selector="ListBox.items">
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="16,0"/>
             <Setter Property="SelectionMode" Value="Single, Toggle"/>
             <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
         </Style>
     </Window.Styles>
     
-    <StackPanel Orientation="Vertical">
-        <StackPanel Orientation="Horizontal">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="File">
+                <MenuItem x:Name="MnuNew" Header="New" Click="MnuNew_OnClick"/>
+                <MenuItem x:Name="MnuOpen" Header="Open"/>
+                <MenuItem x:Name="MnuSave" Header="Save" Click="MnuSave_OnClick"/>
+                <MenuItem x:Name="MnuSaveAs" Header="Save As"/>
+            </MenuItem>
+        </Menu>
+        
+        <Grid RowSpacing="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
             
-            <Grid>
-                
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <Grid Grid.Row="0" Grid.Column="0" ColumnSpacing="16">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
+                
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 
+                <Grid x:Name="FlightForm" x:DataType="models:Flight" Grid.Row="0" Grid.Column="0" RowSpacing="8" ColumnSpacing="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <Label Grid.Row="0" Grid.Column="0" Content="Flight Id:" VerticalAlignment="Top" Padding="0 8 0 0"/>
+                    <TextBox x:Name="TxtFlightId" Grid.Row="0" Grid.Column="1" Text="{Binding FlightId}"/>
+                    
+                    <Label Grid.Row="1" Grid.Column="0"  Content="Airline:" VerticalAlignment="Top" Padding="0 8 0 0"/>
+                    <TextBox x:Name="TxtAirline" Grid.Row="1" Grid.Column="1" Text="{Binding Airline}"/>
+                    
+                    <Label Grid.Row="2" Grid.Column="0"  Content="Origin:" VerticalAlignment="Top" Padding="0 8 0 0"/>
+                    <TextBox x:Name="TxtOrigin" Grid.Row="2" Grid.Column="1" Text="{Binding Origin}"/>
+                    
+                    <Label Grid.Row="3" Grid.Column="0"  Content="Destination:" VerticalAlignment="Top" Padding="0 8 0 0"/>
+                    <TextBox x:Name="TxtDestination" Grid.Row="3" Grid.Column="1" Text="{Binding Destination}"/>
+                    
+                    <Label Grid.Row="4" Grid.Column="0"  Content="Flight Duration:" VerticalAlignment="Top" Padding="0 8 0 0"/>
+                    <TextBox x:Name="TxtFlightDuration" Grid.Row="4" Grid.Column="1" Text="{Binding FlightDuration}"/>
+                </Grid>
+                
+                <ListBox x:Name="LbFlights" Grid.Row="0" Grid.Column="1">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </Grid>
-            <StackPanel x:Name="SpFlightForm" Orientation="Vertical">
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Flight Id:" VerticalAlignment="Center"/>
-                    <TextBox x:Name="TxtFlightId"/>
-                </StackPanel>
-                
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Airline:" VerticalAlignment="Center"/>
-                    <TextBox x:Name="TxtAirline"/>
-                </StackPanel>
-                
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Origin:" VerticalAlignment="Center"/>
-                    <TextBox x:Name="TxtOrigin"/>
-                </StackPanel>
-                
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Flight Id:" VerticalAlignment="Center"/>
-                    <TextBox x:Name="TxtFlightId"/>
-                </StackPanel>
+            
+            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                <Button x:Name="BtnAddFlight" Click="BtnAddFlight_OnClick" Content="Add Plane" Padding="24 12"/>
+                <Button x:Name="BtnTakeOff" Click="BtnTakeOff_OnClick" Content="Take Off" Padding="24 12"/>
             </StackPanel>
-        </StackPanel>
-    </StackPanel>
+            
+            <ListBox x:Name="LbFlightUpdates" Grid.Row="2" Grid.Column="0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+    </DockPanel>
 </Window>

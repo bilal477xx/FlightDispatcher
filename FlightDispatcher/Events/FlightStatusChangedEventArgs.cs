@@ -9,7 +9,7 @@ public class FlightStatusChangedEventArgs : FlightEventArgs
     public FlightStatus NewStatus { get; }
     public DateTime Time { get; }
 
-    public FlightStatusChangedEventArgs(string flightId, FlightStatus oldStatus, FlightStatus newStatus, DateTime time) : base(flightId)
+    public FlightStatusChangedEventArgs(string flightId, string airline, FlightStatus oldStatus, FlightStatus newStatus, DateTime time) : base(flightId, airline)
     {
         OldStatus = oldStatus;
         NewStatus = newStatus;

@@ -5,12 +5,12 @@ namespace FlightDispatcher.Events;
 
 public class LandedEventArgs : FlightEventArgs
 {
-    public string LandedAt { get;}
+    public string LandedIn { get;}
     public DateTime ArrivalTime { get; }
     
-    public LandedEventArgs(string flightId, string landedAt, DateTime arrivalTime) : base(flightId)
+    public LandedEventArgs(string flightId, string airline, string landedIn, DateTime arrivalTime) : base(flightId, airline)
     {
-        LandedAt = landedAt;
+        LandedIn = landedIn;
         ArrivalTime = arrivalTime;
     }
 }

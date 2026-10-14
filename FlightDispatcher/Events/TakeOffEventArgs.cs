@@ -5,10 +5,12 @@ namespace FlightDispatcher.Events;
 
 public class TakeOffEventArgs : FlightEventArgs
 {
-    DateTime DepartureTime { get; }
+    public string Destination { get; }
+    public DateTime DepartureTime { get; }
     
-    public TakeOffEventArgs(string flightId, DateTime departureTime) : base(flightId)
+    public TakeOffEventArgs(string flightId, string airline, string destination, DateTime departureTime) : base(flightId, airline)
     {
+        Destination = destination;
         DepartureTime = departureTime;
     }
 }

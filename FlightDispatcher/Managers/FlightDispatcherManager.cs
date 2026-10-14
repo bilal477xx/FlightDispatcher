@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Threading;
 using FlightDispatcher.Events;
 using FlightDispatcher.Models;
@@ -20,10 +21,15 @@ public class FlightDispatcherManager
 
     public void AddFlight(Flight flight)
     {
+        if (!_flights.ContainsKey(flight.FlightId))
+            throw new ArgumentException($"Flight with ID {flight.FlightId} does exist.");
+        
         _flights.Add(flight.FlightId, flight);
         
-        OnFlightAdded(new FlightAddedEventArgs(flight.FlightId));
+        OnFlightAdded(new FlightAddedEventArgs(flight.FlightId, flight.Airline, flight.Origin, flight.Destination));
     }
+
+    public List<Flight> GetFlights() => _flights.Values.ToList();
 
     public void Depart(string flightId)
     {
@@ -42,8 +48,8 @@ public class FlightDispatcherManager
         _activeTimers.Add(timer, flight);
         timer.Start();
         
-        OnTakeOff(new TakeOffEventArgs(flightId, takeOffTime));
-        OnFlightStatusChanged(new FlightStatusChangedEventArgs(flightId, oldStatus, flight.Status, takeOffTime));
+        OnTakeOff(new TakeOffEventArgs(flightId, flight.Airline, flight.Destination, takeOffTime));
+        OnFlightStatusChanged(new FlightStatusChangedEventArgs(flightId, flight.Airline, oldStatus, flight.Status, takeOffTime));
     }
 
     private void Timer_Tick(object? sender, EventArgs e)
@@ -60,8 +66,8 @@ public class FlightDispatcherManager
         DateTime arrivalTime = DateTime.Now;
         flight.MarkAsLanded(arrivalTime);
         
-        OnLanded(new LandedEventArgs(flight.FlightId, landedAt, arrivalTime));
-        OnFlightStatusChanged(new FlightStatusChangedEventArgs(flight.FlightId, oldStatus, flight.Status, arrivalTime));
+        OnLanded(new LandedEventArgs(flight.FlightId, flight.Airline, landedAt, arrivalTime));
+        OnFlightStatusChanged(new FlightStatusChangedEventArgs(flight.FlightId, flight.Airline, oldStatus, flight.Status, arrivalTime));
     }
 
     private void OnFlightAdded(FlightAddedEventArgs e)

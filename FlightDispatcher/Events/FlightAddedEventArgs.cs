@@ -3,8 +3,12 @@ namespace FlightDispatcher.Events;
 public class FlightAddedEventArgs : FlightEventArgs
 {
 
-    public FlightAddedEventArgs(string flightId) : base(flightId)
+    public string Origin { get; }
+    public string Destination { get; }
+    
+    public FlightAddedEventArgs(string flightId, string airline, string origin, string destination) : base(flightId, airline)
     {
-        
+        Origin = origin;
+        Destination = destination;
     }
 }
