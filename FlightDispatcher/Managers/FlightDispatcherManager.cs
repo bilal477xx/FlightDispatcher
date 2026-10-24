@@ -15,17 +15,17 @@ public class FlightDispatcherManager
     public event EventHandler<LandedEventArgs>? Landed;
     public event EventHandler<FlightStatusChangedEventArgs>? FlightStatusChanged;
     public event EventHandler<FlightAddedEventArgs>? FlightAdded;
+    public event Action? FlightEventsUpdated;
     
     private readonly Dictionary<string, Flight> _flights = new();
+    private readonly List<string> _flightEvents = new();
     private readonly Dictionary<DispatcherTimer, Flight> _activeTimers = new();
 
     public void AddFlight(Flight flight)
     {
-        if (!_flights.ContainsKey(flight.FlightId))
+        if (!_flights.TryAdd(flight.FlightId, flight))
             throw new ArgumentException($"Flight with ID {flight.FlightId} does exist.");
-        
-        _flights.Add(flight.FlightId, flight);
-        
+
         OnFlightAdded(new FlightAddedEventArgs(flight.FlightId, flight.Airline, flight.Origin, flight.Destination));
     }
 
@@ -69,6 +69,44 @@ public class FlightDispatcherManager
         OnLanded(new LandedEventArgs(flight.FlightId, flight.Airline, landedAt, arrivalTime));
         OnFlightStatusChanged(new FlightStatusChangedEventArgs(flight.FlightId, flight.Airline, oldStatus, flight.Status, arrivalTime));
     }
+
+    public void ClearAllFlights()
+    {
+        _flights.Clear();
+        _activeTimers.Clear();
+    }
+
+    public void LoadFrom(FlightDispatcherData data)
+    {
+        ClearAllFlights();
+
+        foreach (Flight flight in data.Flights)
+        {
+            _flights.Add(flight.FlightId, flight);
+            OnFlightAdded(new FlightAddedEventArgs(flight.FlightId, flight.Airline, flight.Origin, flight.Destination));
+        }
+        _flightEvents.Clear();
+        _flightEvents.AddRange(data.FlightEvents);
+    }
+    
+    public void AddFlightEvent(string flightEvent)
+    {
+        if (string.IsNullOrWhiteSpace(flightEvent)) return;
+        
+        _flightEvents.Add(flightEvent);
+        FlightEventsUpdated?.Invoke();
+    }
+
+    public IReadOnlyList<string> GetAllFlightEvents()
+    {
+        return _flightEvents.AsReadOnly();
+    }
+
+    public void ClearAllFlightEvents()
+    {
+        _flightEvents.Clear();
+        FlightEventsUpdated?.Invoke();
+    } 
 
     private void OnFlightAdded(FlightAddedEventArgs e)
     {

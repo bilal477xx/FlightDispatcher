@@ -5,10 +5,10 @@
         xmlns:models="clr-namespace:FlightDispatcher.Models"
         xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        Width="800" Height="450"
+        Width="920" Height="600" WindowStartupLocation="CenterScreen"
         RequestedThemeVariant="Light"
         x:Class="FlightDispatcher.MainWindow"
-        Title="FlightDispatcher" Padding="16">
+        Title="FlightDispatcher">
     <Window.Styles>
         <Style Selector="DataValidationErrors">
             <Setter Property="ErrorTemplate">
@@ -73,11 +73,12 @@
                 <MenuItem x:Name="MnuNew" Header="New" Click="MnuNew_OnClick"/>
                 <MenuItem x:Name="MnuOpen" Header="Open"/>
                 <MenuItem x:Name="MnuSave" Header="Save" Click="MnuSave_OnClick"/>
-                <MenuItem x:Name="MnuSaveAs" Header="Save As"/>
+                <MenuItem x:Name="MnuSaveAs" Header="Save As" Click="MnuSaveAs_OnClick"/>
+                <MenuItem x:Name="MnuLoad" Header="Load" Click="MnuLoad_OnClick"/>
             </MenuItem>
         </Menu>
         
-        <Grid RowSpacing="16">
+        <Grid RowSpacing="16" Margin="16 8">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
