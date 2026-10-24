@@ -7,7 +7,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         Width="920" Height="600" WindowStartupLocation="CenterScreen"
         RequestedThemeVariant="Light"
-        Closing="Window_OnClosing"
+        Closing="Window_OnClosing" Opened="TopLevel_OnOpened"
         x:Class="FlightDispatcher.MainWindow"
         Title="FlightDispatcher">
     <Window.Styles>
@@ -77,6 +77,7 @@
                 <MenuItem x:Name="MnuSaveAs" Header="Save As" Click="MnuSaveAs_OnClick"/>
                 <MenuItem x:Name="MnuLoad" Header="Load" Click="MnuLoad_OnClick"/>
             </MenuItem>
+            <MenuItem x:Name="MnuReport" Header="Report" Click="MnuReport_OnClick"/>
         </Menu>
         
         <Grid RowSpacing="16" Margin="16 8">

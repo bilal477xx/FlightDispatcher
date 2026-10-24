@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -8,6 +10,7 @@ using Avalonia.Platform.Storage;
 using FlightDispatcher.Events;
 using FlightDispatcher.Managers;
 using FlightDispatcher.Models;
+using FlightDispatcher.Models.Enums;
 using FlightDispatcher.Services;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
@@ -22,7 +25,7 @@ public partial class MainWindow : Window
     private AirTrafficController _airTrafficController = new("ATC-001", "Bilal", 100);
     private Flight _currentFlight;
     
-    private string _currentSaveFilePath = string.Empty;
+    private string _currentSaveFilePath = Path.Combine(AppContext.BaseDirectory, "FlightDispatcherData.json");
     private string _savedDataSnapshot = string.Empty;
     
     private bool _closeConfirmed = false;
@@ -279,4 +282,53 @@ public partial class MainWindow : Window
     }
 
     private bool HasUnsavedChanges() => CreateSnapshot() != _savedDataSnapshot;
+
+    private void MnuReport_OnClick(object? sender, RoutedEventArgs e)
+    {
+        IReadOnlyList<string> report = _flightDispatcher.GetAllFlightEvents();
+        StringBuilder stringReport = new StringBuilder();
+        stringReport.AppendLine($"FLIGHT OPERATIONS REPORT – {DateTime.Now:yyyy-MM-dd HH:mm}");
+        stringReport.AppendLine($"Controller: {_airTrafficController.Name} ({_airTrafficController.EmployeeId}), flights handled: {_airTrafficController.NumberOfFlightsHandled}");
+
+        List<Flight> flights = _flightDispatcher.GetFlights();
+        stringReport.AppendLine($"\nRECORDED FLIGHTS ({flights.Count})");
+        foreach (Flight flight in flights)
+            stringReport.AppendLine($"  {flight.FlightId}  {flight.Airline}  {flight.Origin} -> {flight.Destination}  {flight.Status}");
+
+        stringReport.AppendLine("\nSTATISTICS");
+        stringReport.AppendLine($"  In air: {flights.Count(f => f.Status == FlightStatus.InAir)}, landed: {flights.Count(f => f.Status == FlightStatus.Landed)}");
+        
+        foreach (string item in report)
+        {
+            stringReport.AppendLine(item);
+        }
+        
+        ReportWindow reportWindow = new ReportWindow(stringReport.ToString());
+        reportWindow.ShowDialog(this);
+    }
+
+    private async void TopLevel_OnOpened(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (File.Exists(_currentSaveFilePath))
+            {
+                FlightDispatcherData? data = await JsonFileService<FlightDispatcherData>.LoadAsync(_currentSaveFilePath);
+                if (data != null) _flightDispatcher.LoadFrom(data);
+            }
+            else
+            {
+                await JsonFileService<FlightDispatcherData>.SaveAsync(new FlightDispatcherData(_flightDispatcher.GetFlights(), _flightDispatcher.GetAllFlightEvents().ToList(), _airTrafficController), _currentSaveFilePath);
+            }
+            
+            _savedDataSnapshot = CreateSnapshot();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                       or NotSupportedException or JsonException or ArgumentException)
+        {
+            await MessageBoxManager
+                .GetMessageBoxStandard("Error", $"The file could not be loaded:\n{ex.Message}")
+                .ShowWindowDialogAsync(this);
+        }
+    }
 }
