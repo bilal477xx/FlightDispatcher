@@ -7,6 +7,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         Width="920" Height="600" WindowStartupLocation="CenterScreen"
         RequestedThemeVariant="Light"
+        Closing="Window_OnClosing"
         x:Class="FlightDispatcher.MainWindow"
         Title="FlightDispatcher">
     <Window.Styles>

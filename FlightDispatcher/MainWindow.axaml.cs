@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -11,6 +10,8 @@ using FlightDispatcher.Managers;
 using FlightDispatcher.Models;
 using FlightDispatcher.Services;
 using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
+using Newtonsoft.Json;
 
 namespace FlightDispatcher;
 
@@ -18,16 +19,21 @@ public partial class MainWindow : Window
 {
 
     private readonly FlightDispatcherManager _flightDispatcher = new();
+    private AirTrafficController _airTrafficController = new("ATC-001", "Bilal", 100);
     private Flight _currentFlight;
     
     private string _currentSaveFilePath = string.Empty;
     private string _savedDataSnapshot = string.Empty;
+    
+    private bool _closeConfirmed = false;
     
     public MainWindow()
     {
         InitializeComponent();
         _currentFlight = new Flight();
         FlightForm.DataContext = _currentFlight;
+        _airTrafficController.StartMonitoring(_flightDispatcher);
+        _flightDispatcher.AssignController(_airTrafficController);
 
         RefreshFlightList();
         
@@ -36,6 +42,9 @@ public partial class MainWindow : Window
         _flightDispatcher.Landed += OnLanded;
         _flightDispatcher.FlightStatusChanged += OnFlightStatusChanged;
         _flightDispatcher.FlightEventsUpdated += OnFlightEventUpdated;
+        _airTrafficController.FlightDelayed += OnFlightDelayed;
+        _airTrafficController.EmergencyDeclared += OnEmergencyDeclared;
+        _airTrafficController.RunwayCleared += OnRunwayCleared;
     }
 
     private async void BtnAddFlight_OnClick(object? sender, RoutedEventArgs e)
@@ -102,6 +111,21 @@ public partial class MainWindow : Window
         RefreshFlightList();
     }
 
+    private void OnFlightDelayed(object? sender, FlightDelayedEventArgs e)
+    {
+        _flightDispatcher.AddFlightEvent($"$Flight with flight id {e.FlightId} has been delayed for {e.DelayDuration} seconds.");
+    }
+
+    private void OnEmergencyDeclared(object? sender, EmergencyDeclaredEventArgs e)
+    {
+        _flightDispatcher.AddFlightEvent($"Flight with flight id {e.FlightId} has declared an emergency.");
+    }
+
+    private void OnRunwayCleared(object? sender, RunwayClearedEventArgs e)
+    {
+        _flightDispatcher.AddFlightEvent($"Flight with flight id {e.FlightId} has been cleared.");
+    }
+
     private void RefreshFlightList()
     {
         LbFlights.ItemsSource = null;
@@ -122,16 +146,24 @@ public partial class MainWindow : Window
 
     private async void MnuSave_OnClick(object? sender, RoutedEventArgs e)
     {
+        await Save();
+    }
+
+    private async Task Save()
+    {
         if (string.IsNullOrWhiteSpace(_currentSaveFilePath))
         {
-            SaveAs();
+            await SaveAs();
             return;
         }
-        
+
         try
         {
-            FlightDispatcherData flightDispatcherData = new FlightDispatcherData(_flightDispatcher.GetFlights(), _flightDispatcher.GetAllFlightEvents().ToList());
+            FlightDispatcherData flightDispatcherData = new FlightDispatcherData(_flightDispatcher.GetFlights(), _flightDispatcher.GetAllFlightEvents().ToList(), _airTrafficController);
             await JsonFileService<FlightDispatcherData>.SaveAsync(flightDispatcherData, _currentSaveFilePath);
+            
+            _savedDataSnapshot = CreateSnapshot();
+            
             await MessageBoxManager.GetMessageBoxStandard("Info", "The data has been saved.").ShowWindowDialogAsync(this);
         }
         catch (Exception exception)
@@ -140,12 +172,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private void MnuSaveAs_OnClick(object? sender, RoutedEventArgs e)
+    private async void MnuSaveAs_OnClick(object? sender, RoutedEventArgs e)
     {
-        SaveAs();
+        await SaveAs();
     }
 
-    private async void SaveAs()
+    private async Task SaveAs()
     {
         try
         {
@@ -163,8 +195,12 @@ public partial class MainWindow : Window
             string? path = file?.TryGetLocalPath();
             if (path == null) return;
             
-            FlightDispatcherData flightDispatcherData = new FlightDispatcherData(_flightDispatcher.GetFlights(), _flightDispatcher.GetAllFlightEvents().ToList());
+            FlightDispatcherData flightDispatcherData = new FlightDispatcherData(_flightDispatcher.GetFlights(), _flightDispatcher.GetAllFlightEvents().ToList(), _airTrafficController);
             await JsonFileService<FlightDispatcherData>.SaveAsync(flightDispatcherData, path);
+
+            _currentSaveFilePath = path;
+            _savedDataSnapshot = CreateSnapshot();
+            
             await MessageBoxManager.GetMessageBoxStandard("Info", "The data has been saved.").ShowWindowDialogAsync(this);
         }
         catch (Exception exception)
@@ -186,7 +222,7 @@ public partial class MainWindow : Window
                 ]
             });
             
-            var path = files.Count > 0 ? files[0].TryGetLocalPath() : null;
+            string? path = files.Count > 0 ? files[0].TryGetLocalPath() : null;
             if (path == null) return;
             
             FlightDispatcherData? data = await JsonFileService<FlightDispatcherData>.LoadAsync(path);
@@ -198,6 +234,9 @@ public partial class MainWindow : Window
             }
             
             _flightDispatcher.LoadFrom(data);
+            _airTrafficController.Name = data.AirTrafficController.Name;
+            _airTrafficController.EmployeeId = data.AirTrafficController.EmployeeId;
+            _airTrafficController.NumberOfFlightsHandled = data.AirTrafficController.NumberOfFlightsHandled;
         }
         catch (Exception exception)
         {
@@ -209,4 +248,35 @@ public partial class MainWindow : Window
     {
         LbFlightUpdates.ItemsSource = _flightDispatcher.GetAllFlightEvents();
     }
+
+    private async void Window_OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_closeConfirmed || !HasUnsavedChanges()) return;
+        e.Cancel = true;
+        
+        ButtonResult result = await MessageBoxManager
+            .GetMessageBoxStandard("Save", "Do you want to save the changes?", ButtonEnum.YesNo)
+            .ShowWindowDialogAsync(this);
+        
+
+        if (result == ButtonResult.Yes)
+        {
+            await Save();
+        }
+        
+        _closeConfirmed = true;
+        Close();
+    }
+    
+    private string CreateSnapshot()
+    {
+        FlightDispatcherData data = new FlightDispatcherData(
+            _flightDispatcher.GetFlights(),
+            _flightDispatcher.GetAllFlightEvents().ToList(),
+            _airTrafficController);
+
+        return JsonConvert.SerializeObject(data, Formatting.Indented);
+    }
+
+    private bool HasUnsavedChanges() => CreateSnapshot() != _savedDataSnapshot;
 }

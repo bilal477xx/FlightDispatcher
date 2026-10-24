@@ -4,6 +4,7 @@
     <option name="projectPerEditor">
       <map>
         <entry key="FlightDispatcher/MainWindow.axaml" value="FlightDispatcher/FlightDispatcher.csproj" />
+        <entry key="FlightDispatcher/ReportWindow.axaml" value="FlightDispatcher/FlightDispatcher.csproj" />
       </map>
     </option>
   </component>

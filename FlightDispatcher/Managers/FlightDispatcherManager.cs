@@ -54,6 +54,11 @@ public class FlightDispatcherManager
 
     private void Timer_Tick(object? sender, EventArgs e)
     {
+        LandFlight(sender);
+    }
+
+    private void LandFlight(object? sender)
+    {
         DispatcherTimer timer = (DispatcherTimer) sender!;
         timer.Stop();
         timer.Tick -= Timer_Tick;
@@ -97,6 +102,29 @@ public class FlightDispatcherManager
         FlightEventsUpdated?.Invoke();
     }
 
+    public void AssignController(AirTrafficController controller)
+    {
+        controller.FlightDelayed += HandleFlightDelayed;
+        controller.EmergencyDeclared += HandleEmergency;
+    }
+    
+    public void HandleFlightDelayed(object? sender, FlightDelayedEventArgs e)
+    {
+        DispatcherTimer? timer = FindTimer(e.FlightId);
+        if (timer == null) return;
+
+        timer.Stop();
+        timer.Interval += TimeSpan.FromSeconds(e.DelayDuration);
+        timer.Start();
+    }
+
+    public void HandleEmergency(object? sender, EmergencyDeclaredEventArgs e)
+    {
+        DispatcherTimer? timer = FindTimer(e.FlightId);
+        if (timer == null) return;
+        LandFlight(timer);
+    }
+
     public IReadOnlyList<string> GetAllFlightEvents()
     {
         return _flightEvents.AsReadOnly();
@@ -126,6 +154,17 @@ public class FlightDispatcherManager
     private void OnFlightStatusChanged(FlightStatusChangedEventArgs e)
     {
         FlightStatusChanged?.Invoke(this, e);
+    }
+    
+    private DispatcherTimer? FindTimer(string flightId)
+    {
+        foreach (KeyValuePair<DispatcherTimer, Flight> entry in _activeTimers)
+        {
+            if (entry.Value.FlightId == flightId)
+                return entry.Key;
+        }
+
+        return null;   // flight isn't in the air (already landed or unknown ID)
     }
     
 }
